@@ -27,21 +27,22 @@ compare the two approaches, both with each other as well as the other provided e
 how well it holds up. I also included the parser combinator [Nom](https://github.com/Geal/nom)
 in this comparison.
 
-The data used is the file ``http-requests.txt`` file as well as a copy of this file which contains
-the same data copied 10,000 times, resulting in a 204 MB file.
+The data used is the file ``http-requests.txt`` file as well as two copies of this file which
+contains the same data copied 100 times and 10,000 times, resulting two files, 2 MB and 204 MB,
+in size.
 
 The tests were run on a MacBook Pro (Retina, 15-inch, Late 2013) with a 2.3 GHz Intel Core i7 and
 16 GB RAM. All optimizations were turned on (``-O2`` for Haskell, ``-O3`` for C and ``--release``
 for Rust).
 
-Parser         | Time, 21 kB | Time, 204 MB
----------------|-------------|----------------:
-C http-parser  | 0.003 s     | 0.62 s
-Attoparsec     | 0.004 s     | 1.45 s
-Parsec         | 0.009 s     | 47.75 s
-[Nom][]        | 0.004 s     | NA<sup>1</sup>
-[Manual][]     | 0.003 s     | 1.19 s
-[Boxed][]      | 0.004 s     | 3.75 s
+Parser         | Time, 21 kB | Time, 2 MB  | Time, 204 MB
+---------------|------------:|------------:|----------------:
+C http-parser  | 0.003 s     |     0.009 s | 0.62 s
+Attoparsec     | 0.004 s     |     0.021 s | 1.45 s
+Parsec         | 0.009 s     |     0.490 s | 47.75 s
+[Nom][]        | 0.004 s     |     6.902 s | NA<sup>1</sup>
+[Manual][]     | 0.003 s     |     0.015 s | 1.19 s
+[Boxed][]      | 0.004 s     |     0.041 s | 3.75 s
 
 1: Failed to produce any result after more than 1 hour of running with 100% CPU-usage.
 
