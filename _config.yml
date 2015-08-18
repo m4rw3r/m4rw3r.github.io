@@ -10,6 +10,9 @@ tagline:             The blog of Martin Wernstål
 url:                 http://m4rw3r.github.io/
 paginate:            1
 baseurl:             ""
+markdown:            redcarpet
+redcarpet:
+  extensions: ["no_intra_emphasis", "fenced_code_blocks", "autolink", "tables", "with_toc_data"]
 
 # Assets
 #
