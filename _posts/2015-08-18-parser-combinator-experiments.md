@@ -13,18 +13,19 @@ something in the works which looks pretty promising.
 
 ## The code
 
-The code can be found in my ``rust_parser_experiments`` repo, the ``master`` branch currently
+The code can be found in my [rust_parser_experiments][] repo, the ``master`` branch currently
 containing the manual state-threading and the ``fourth`` branch containing the boxed closure
 version.
 
-* [manual-state](Manually threading state)
-* [boxed-closures](Boxed closures)
+* [Manually threading state][]
+* [Boxed closures][]
 
 ## First, some numbers
 
-I used the attoparsec's http-header [attoparsec-examples](examples) as a simple benchmark to
+I used the attoparsec's http-header [examples][] as a simple benchmark to
 compare the two approaches, both with each other as well as the other provided examples to see
-how well it holds up. I also included the parser combinator [nom-github](Nom) in this comparison.
+how well it holds up. I also included the parser combinator [Nom](https://github.com/Geal/nom)
+in this comparison.
 
 The data used is the file ``http-requests.txt`` file as well as a copy of this file which contains
 the same data copied 10,000 times, resulting in a 204 MB file.
@@ -33,14 +34,14 @@ The tests were run on a MacBook Pro (Retina, 15-inch, Late 2013) with a 2.3 GHz 
 16 GB RAM. All optimizations were turned on (``-O2`` for Haskell, ``-O3`` for C and ``--release``
 for Rust).
 
-Parser           |  Time, 21 kB |   Time, 204 MB
------------------|--------------|---------------:
-C http-parser    | 0.003 s      |         0.62 s
-Attoparsec       | 0.004 s      |         1.45 s
-Parsec           | 0.009 s      |        47.75 s
-[nom-atto](Nom)  | 0.004 s      | NA<sup>1</sup>
-[thread](Manual) | 0.003 s      |         1.19 s
-[boxed](Boxed)   | 0.004 s      |         3.75 s
+Parser         | Time, 21 kB | Time, 204 MB
+---------------|-------------|----------------:
+C http-parser  | 0.003 s     | 0.62 s
+Attoparsec     | 0.004 s     | 1.45 s
+Parsec         | 0.009 s     | 47.75 s
+[Nom][]        | 0.004 s     | NA<sup>1</sup>
+[Manual][]     | 0.003 s     | 1.19 s
+[Boxed][]      | 0.004 s     | 3.75 s
 
 1: Failed to produce any result after more than 1 hour of running with 100% CPU-usage.
 
@@ -54,15 +55,15 @@ function.
 The basic monad laws apply to both of the approaches, the difference being that manual
 state threading requires the first parameter to always be the monad-state.
 
-|Haskell                | Manual                             | Boxed
-|-----------------------|------------------------------------|-------------------------------
-|``m :: Parser a``      | ``m: Parser<A>``                   | ``m: Parser<A>``
-|``f :: a -> Parser b`` | ``f: Fn(Empty, A) -> Parser<B>``   | ``f: Fn(A) -> Parser<B>``
-|``g :: Parser b``      | ``g: Fn(Empty) -> Parser<B>``      | ``g: Fn() -> Parser<B>``
-|``m >>= f``            | ``bind(m, g)``                     | ``bind(m, g)``
-|``m >> g``             | <code>bind(m, &#124;m, _&#124; g(m))</code> | <code>bind(f, &#124;_&#124; g())</code>
-|``return a``           | ``ret(m, a)``                      | ``ret(a)``
-|``fail a``             | ``err(m, a)``                      | ``err(a)``
+Haskell                | Manual                             | Boxed
+-----------------------|------------------------------------|-------------------------------
+``m :: Parser a``      | ``m: Parser<A>``                   | ``m: Parser<A>``
+``f :: a -> Parser b`` | ``f: Fn(Empty, A) -> Parser<B>``   | ``f: Fn(A) -> Parser<B>``
+``g :: Parser b``      | ``g: Fn(Empty) -> Parser<B>``      | ``g: Fn() -> Parser<B>``
+``m >>= f``            | ``bind(m, g)``                     | ``bind(m, g)``
+``m >> g``             | <code>bind(m, &#124;m, _&#124; g(m))</code> | <code>bind(f, &#124;_&#124; g())</code>
+``return a``           | ``ret(m, a)``                      | ``ret(a)``
+``fail a``             | ``err(m, a)``                      | ``err(a)``
 
 For the manual version above, ``Empty`` is an alias for ``Parser<()>`` to indicate state but no
 wrapped value (all the parsers require an ``Empty`` instance to act upon, to prevent accidental
@@ -73,7 +74,7 @@ parameter.
 
 Expanded version of ``do``-syntax:
 
-Manually threading state:
+### Manually threading state
 
 ```rust
 fn request_line<'a>(p: Empty<'a, u8>) -> Parser<'a, u8, Request<'a>, Error<u8>> {
@@ -86,7 +87,7 @@ fn request_line<'a>(p: Empty<'a, u8>) -> Parser<'a, u8, Request<'a>, Error<u8>> 
 }
 ```
 
-Boxed:
+### Boxed
 
 ```rust
 fn request_line<'a>() -> Parser<'a, 'a, u8, Request<'a>, Error<u8>> {
@@ -100,8 +101,7 @@ fn request_line<'a>() -> Parser<'a, 'a, u8, Request<'a>, Error<u8>> {
 ```
 
 And here is the difference in the http-example once the ``mdo!`` macro is used:
-
-[https://gist.github.com/m4rw3r/6d1ca498f8e4abc24dbd](Diff)
+[Diff](https://gist.github.com/m4rw3r/6d1ca498f8e4abc24dbd)
 
 ## Operation
 
@@ -122,11 +122,18 @@ are used, as the parser can only be used once. This means that ``many`` and the 
 a newly allocated parser for every iteration, taking a ``Fn() -> Parser<A>`` as a parameter, which
 causes a lot of heap-allocation during parsing.
 
+## My opinion
 
-[manual-state]: https://github.com/m4rw3r/rust_parser_experiments/tree/f64d0cc317c5d850987b83f206191eeed1e9bb68
-[boxed-closures]: https://github.com/m4rw3r/rust_parser_experiments/tree/b36a60a79cf38bb9e1c39a2d382b737b0f6aeb22
-[attoparsec-examples]: https://github.com/bos/attoparsec/tree/master/examples
-[nom-github]: https://github.com/Geal/nom
-[nom-atto]: https://gist.github.com/m4rw3r/0dd154d232abd0f3d4cf
-[thread]: https://github.com/m4rw3r/rust_parser_experiments/blob/master/examples/http_parser.rs
-[boxed]: https://github.com/m4rw3r/rust_parser_experiments/blob/fourth/examples/http_parser.rs
+I am currently on the fence here, but leaning towards using the manual threading-of-state for the
+time being since it optimizes much better and seems to correspond better to Rust's current
+feature-set. Once [abstract return types](https://github.com/rust-lang/rfcs/issues/518) lands, and
+it works with functions, it should hopefully improve the performance of the closure-returning
+version and make that a clear winner.
+
+[rust_parser_experiments]: https://github.com/m4rw3r/rust_parser_experiments
+[Manually threading state]: https://github.com/m4rw3r/rust_parser_experiments/tree/f64d0cc317c5d850987b83f206191eeed1e9bb68
+[Boxed closures]: https://github.com/m4rw3r/rust_parser_experiments/tree/b36a60a79cf38bb9e1c39a2d382b737b0f6aeb22
+[examples]: https://github.com/bos/attoparsec/tree/master/examples
+[Nom]: https://gist.github.com/m4rw3r/0dd154d232abd0f3d4cf
+[Manual]: https://github.com/m4rw3r/rust_parser_experiments/blob/master/examples/http_parser.rs
+[Boxed]: https://github.com/m4rw3r/rust_parser_experiments/blob/fourth/examples/http_parser.rs
