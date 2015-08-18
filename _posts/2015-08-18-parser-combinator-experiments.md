@@ -61,7 +61,7 @@ Haskell                | Manual                             | Boxed
 ``m :: Parser a``      | ``m: Parser<A>``                   | ``m: Parser<A>``
 ``f :: a -> Parser b`` | ``f: Fn(Empty, A) -> Parser<B>``   | ``f: Fn(A) -> Parser<B>``
 ``g :: Parser b``      | ``g: Fn(Empty) -> Parser<B>``      | ``g: Fn() -> Parser<B>``
-``m >>= f``            | ``bind(m, g)``                     | ``bind(m, g)``
+``m >>= f``            | ``bind(m, f)``                     | ``bind(m, f)``
 ``m >> g``             | <code>bind(m, &#124;m, _&#124; g(m))</code> | <code>bind(f, &#124;_&#124; g())</code>
 ``return a``           | ``ret(m, a)``                      | ``ret(a)``
 ``fail a``             | ``err(m, a)``                      | ``err(a)``
