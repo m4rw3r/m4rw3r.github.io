@@ -36,15 +36,13 @@ The tests were run on a MacBook Pro (Retina, 15-inch, Late 2013) with a 2.3 GHz 
 for Rust).
 
 Parser         | Time, 21 kB | Time, 2 MB  | Time, 204 MB
----------------|------------:|------------:|----------------:
-C http-parser  | 0.003 s     |     0.009 s | 0.62 s
-Attoparsec     | 0.004 s     |     0.021 s | 1.45 s
+---------------|------------:|------------:|------------:
+C http-parser  | 0.003 s     |     0.009 s |  0.62 s
+Attoparsec     | 0.004 s     |     0.021 s |  1.45 s
 Parsec         | 0.009 s     |     0.490 s | 47.75 s
-[Nom][]        | 0.004 s     |     6.902 s | NA<sup>1</sup>
-[Manual][]     | 0.003 s     |     0.015 s | 1.19 s
-[Boxed][]      | 0.004 s     |     0.041 s | 3.75 s
-
-1: Failed to produce any result after more than 1 hour of running with 100% CPU-usage.
+[Nom][]        | 0.003 s     |     0.018 s |  1.42 s
+[Manual][]     | 0.003 s     |     0.015 s |  1.19 s
+[Boxed][]      | 0.004 s     |     0.041 s |  3.75 s
 
 Making some quick profiling using Instruments (bundled with XCode) it seems like the Boxed version
 spends about a second in ``je_malloc`` to allocate all the boxed closures which are used. In
@@ -130,6 +128,13 @@ time being since it optimizes much better and seems to correspond better to Rust
 feature-set. Once [abstract return types](https://github.com/rust-lang/rfcs/issues/518) lands, and
 it works with functions, it should hopefully improve the performance of the closure-returning
 version and make that a clear winner.
+
+**EDIT 2018-08-19:** Updated performance numbers for Nom. The ``nom::Stepper`` introduced lots of memory
+operations and caused cycles to be spent on moving data which should not have needed to be moved.
+
+This increased Nom's performance from 0.004 s and 6.902 s for the first two benchmarks, and the
+last one couldn't complete it in one hour when ``nom::Stepper`` was used. The ``nom::MemProducer``
+was also tried along with ``nom::Stepper`` but that did not make any noticeable difference.
 
 [rust_parser_experiments]: https://github.com/m4rw3r/rust_parser_experiments
 [Manually threading state]: https://github.com/m4rw3r/rust_parser_experiments/tree/f64d0cc317c5d850987b83f206191eeed1e9bb68
