@@ -129,7 +129,7 @@ feature-set. Once [abstract return types](https://github.com/rust-lang/rfcs/issu
 it works with functions, it should hopefully improve the performance of the closure-returning
 version and make that a clear winner.
 
-**EDIT 2018-08-19:** Updated performance numbers for Nom. The ``nom::Stepper`` introduced lots of memory
+**EDIT 2015-08-19:** Updated performance numbers for Nom. The ``nom::Stepper`` introduced lots of memory
 operations and caused cycles to be spent on moving data which should not have needed to be moved.
 
 This increased Nom's performance from 0.004 s and 6.902 s for the first two benchmarks, and the
