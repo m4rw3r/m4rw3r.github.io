@@ -136,6 +136,8 @@ This increased Nom's performance from 0.004 s and 6.902 s for the first two benc
 last one couldn't complete it in one hour when ``nom::Stepper`` was used. The ``nom::MemProducer``
 was also tried along with ``nom::Stepper`` but that did not make any noticeable difference.
 
+**EDIT:** Posted on Reddit here: [/r/rust](https://www.reddit.com/r/rust/comments/3hinis/parser_combinator_experiments/)
+
 [rust_parser_experiments]: https://github.com/m4rw3r/rust_parser_experiments
 [Manually threading state]: https://github.com/m4rw3r/rust_parser_experiments/tree/f64d0cc317c5d850987b83f206191eeed1e9bb68
 [Boxed closures]: https://github.com/m4rw3r/rust_parser_experiments/tree/b36a60a79cf38bb9e1c39a2d382b737b0f6aeb22
