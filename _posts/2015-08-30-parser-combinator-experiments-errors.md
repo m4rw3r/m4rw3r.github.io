@@ -311,6 +311,8 @@ gain in parsing speed.
 
 Now on to actually attempting to use this code in an application!
 
+**EDIT:** Posted on Reddit here: [/r/rust](https://www.reddit.com/r/rust/comments/3iwqlo/parser_combinator_experiments_part_2_error/)
+
 [C http-parser]: https://github.com/bos/attoparsec/blob/4f137347be02106765f6897059b88219c79bb86c/examples/rfc2616.c
 [Attoparsec]: https://github.com/bos/attoparsec/blob/4f137347be02106765f6897059b88219c79bb86c/examples/RFC2616.hs
 [Nom]: https://gist.github.com/m4rw3r/0dd154d232abd0f3d4cf
