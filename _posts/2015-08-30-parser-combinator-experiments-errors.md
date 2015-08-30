@@ -162,7 +162,8 @@ mdo!{input,
 ```
 
 It does not work so well when it is done in reverse however, as that will attempt to convert from
-the potentially user-defined error-type from ``my_parser`` into the my library's ``Error`` type:
+the potentially user-defined error-type from ``my_parser`` into the ``Error`` type of the parser
+library:
 
 ```rust
 mdo!{input,
@@ -207,7 +208,7 @@ the type of ``bind`` since the returned error type is the error type from ``f``.
 
 This can be solved by adding a [default type parameter](https://github.com/rust-lang/rfcs/blob/master/text/0213-defaulted-type-params.md)
 for the error of ``f`` so that it will default to the existing error type, this will cause
-``rustc`` to use that type if it cannot infer a type for the error type of ``f``. Sadly it just
+``rustc`` to use that type if it cannot infer a type for the error type of ``f``. Sadly it is just
 partially usable at the moment in stable rust; stable rust accepts the syntax of the default type
 parameter but does not use it as a fallback in case the inference fails.
 
@@ -215,7 +216,7 @@ To be able to use the default type as a fallback nightly rust must be used and t
 want to enable the fallback in the code they use must enable the feature gate
 ``default_type_parameter_fallback``. This will cause ``rustc`` to use the fallback for all code
 in the crate, this includes code from other libraries used in the crate (eg. if ``bind`` is used
-and inference is wanted for it it is the crate which performs the call to bind which needs the
+and inference is wanted for it, it is the crate which performs the call to ``bind`` which needs the
 feature enabled, not the library where ``bind`` is defined).  There is a
 [tracking issue](https://github.com/rust-lang/rust/issues/27336) for the fallback, and it seems
 like it is just waiting for some more testing in the wild before it is enabled by default.
@@ -229,6 +230,8 @@ pub fn bind<'a, I, T, E, F, U, V = E>(m: Parser<'a, I, T, E>, f: F)
   where V: From<E>,
         F: FnOnce(Input<'a, I>, T) -> Parser<'a, I, U, V>;
 ```
+
+Note ``V = E`` above.
 
 In the future default type parameter fallback can be used to simplify error handling around parsers
 which do not return any error (eg. ``any``). Currently they "return" ``Error<I>`` to be consistent
