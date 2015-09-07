@@ -157,8 +157,8 @@ switch-case-goto and 15% slower than the manual-threading of state variant. But 
 than Nom and 80% faster compared to Attoparsec.
 
 These are really promising results and I am hoping that Rust can land this feature in the near
-future, unboxed abstract returns and higher kinded types would be amazing tools to already have in
-a great language.
+future, unboxed abstract returns and higher kinded types would be amazing tools to have in an
+already great language.
 
 [C http-parser]: https://github.com/bos/attoparsec/blob/4f137347be02106765f6897059b88219c79bb86c/examples/rfc2616.c
 [Attoparsec]: https://github.com/bos/attoparsec/blob/4f137347be02106765f6897059b88219c79bb86c/examples/RFC2616.hs
