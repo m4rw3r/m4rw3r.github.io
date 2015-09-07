@@ -160,6 +160,8 @@ These are really promising results and I am hoping that Rust can land this featu
 future, unboxed abstract returns and higher kinded types would be amazing tools to have in an
 already great language.
 
+**EDIT:** Published on reddit: [/r/rust](https://www.reddit.com/r/rust/comments/3k0d0d/parser_combinator_experiments_part_3_performance/)
+
 [C http-parser]: https://github.com/bos/attoparsec/blob/4f137347be02106765f6897059b88219c79bb86c/examples/rfc2616.c
 [Attoparsec]: https://github.com/bos/attoparsec/blob/4f137347be02106765f6897059b88219c79bb86c/examples/RFC2616.hs
 [Experiment]: https://gist.github.com/m4rw3r/cda66a9308ecb91f7147
