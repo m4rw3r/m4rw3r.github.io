@@ -144,10 +144,10 @@ Fixed a probable typo, added monomorphize at some spots and finally removed the 
 
 The same files were used as in the [last test]({% post_url 2015-08-18-parser-combinator-experiments %}):
 
-Parser             | Time, 21 kB | Time, 2 MB | Time, 204 MB
--------------------|------------:|-----------:|------------:
-slow ``is_token``  | 0.003 s     | 0.014 s    | 1.16 s
-fast ``is_token``  | 0.003 s     | 0.010 s    | 0.80 s
+Parser               | Time, 21 kB | Time, 2 MB | Time, 204 MB
+---------------------|------------:|-----------:|------------:
+[slow ``is_token``]  | 0.003 s     | 0.014 s    | 1.16 s
+fast ``is_token``    | 0.003 s     | 0.010 s    | 0.80 s
 
 This is actually a very competitive result, seeing as the hand-written C-parser clocks in at 0.6
 seconds, and neither the parser combinator nor the specific modifications to ``rustc`` have been
@@ -165,3 +165,4 @@ a great language.
 [Experiment]: https://gist.github.com/m4rw3r/cda66a9308ecb91f7147
 [Combine]: https://gist.github.com/m4rw3r/4e82c4ee10deb1e141fc
 [Nom]: https://gist.github.com/m4rw3r/54f7d80a3a5232c85d79
+[slow ``is_token``]: https://github.com/m4rw3r/rust_parser_experiments/blob/ebedd36f2f7e19171c65e38fdee3822d5daa4090/src/main.rs#L208
