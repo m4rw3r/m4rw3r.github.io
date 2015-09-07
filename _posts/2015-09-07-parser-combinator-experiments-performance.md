@@ -116,11 +116,12 @@ struct MyData<'a> {
 
 fn my_parser<'a>() -> Parser<'a, MyStruct<'a>> {
     bind(take_till(|c| c == b' '), |name|
-        bind(take_till(|c| == b'\n'), |last_name|
-            MyData{
-                name:      name,
-                last_name: last_name,
-            }))
+        bind(char(b' '), |_|
+            bind(take_till(|c| == b'\n'), |last_name|
+                MyData{
+                    name:      name,
+                    last_name: last_name,
+                })))
 }
 
 fn main() {
