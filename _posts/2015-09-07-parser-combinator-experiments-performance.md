@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Parser Combinator Experiments in Rust - Part 3"
+title: "Parser Combinator Experiments in Rust - Part 3: Performance and impl Trait"
 permalink: parser-combinator-experiments-part-3
 ---
 
