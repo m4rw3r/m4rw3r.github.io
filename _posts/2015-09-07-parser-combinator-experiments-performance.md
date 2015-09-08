@@ -114,7 +114,7 @@ struct MyData<'a> {
     last_name: &'a [u8],
 }
 
-fn my_parser<'a>() -> Parser<'a, MyStruct<'a>> {
+fn my_parser<'a>() -> impl Parser<'a, MyStruct<'a>> {
     bind(take_till(|c| c == b' '), |name|
         bind(char(b' '), |_|
             bind(take_till(|c| == b'\n'), |last_name|
