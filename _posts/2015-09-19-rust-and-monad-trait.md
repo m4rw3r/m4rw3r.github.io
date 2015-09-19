@@ -511,3 +511,5 @@ impl Monad for Option {
 ```
 
 [impl specialization]: https://github.com/rust-lang/rfcs/pull/1210
+
+**EDIT:** Posted on reddit: [/r/rust](https://www.reddit.com/r/rust/comments/3li3by/rust_and_the_monad_trait_not_just_higher_kinded/)
