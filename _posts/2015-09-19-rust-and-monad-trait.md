@@ -513,3 +513,9 @@ impl Monad for Option {
 [impl specialization]: https://github.com/rust-lang/rfcs/pull/1210
 
 **EDIT:** Posted on reddit: [/r/rust](https://www.reddit.com/r/rust/comments/3li3by/rust_and_the_monad_trait_not_just_higher_kinded/)
+
+**EDIT 2015-09-21:** [diff](https://github.com/m4rw3r/m4rw3r.github.io/commit/68bceb3f427b9f24ba0ec60f1b749a569a4a8981)
+
+Changed ``Monad`` definition to not include the ``T`` generic in the impl but only in ``bind``
+where possible. The HKT syntax was also changed to ``Trait[Type<_>]`` to indicate a type of
+kind ``* -> *`` required for the impl of ``Trait``.
