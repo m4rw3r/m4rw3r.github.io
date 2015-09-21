@@ -19,25 +19,25 @@ proper feature or syntax in a programming language &mdash; but it is more of an 
 what would be needed to properly implement a generic ``Monad`` trait. Hopefully this article can
 serve as some kind of start for a discussion about a real RFC.
 
-# Simple ``Monad<M<T>>`` definition
+# Simple ``Monad`` definition
 
-This is a definiton of ``Monad<M<T>>`` which is similar to the definition Scala uses, with the
+This is a definiton of ``Monad`` which is similar to the definition Scala uses, with the
 difference that the ``Applicative`` trait is not involved:
 
 ```rust
-trait Monad<M<T>> {
-    fn bind<F, U>(self, F) -> M<U>
+trait Monad[M<_>] {
+    fn bind<F, T, U>(M<T>, F) -> M<U>
       where F: FnOnce(T) -> M<U>;
 
-    fn unit(T) -> M<T>;
+    fn unit<T>(T) -> M<T>;
 }
 ```
 
 This looks pretty neat and works nicely for ``Option<T>``:
 
 ```rust
-impl<T> Monad<Option<T>> for Option<T> {
-    fn bind<F, U>(self, f: F) -> Option<U>
+impl Monad[Option<_>] for Option {
+    fn bind<F, T, U>(m: Option<T>, f: F) -> Option<U>
       where F: FnOnce(T) -> Option<U> {
         match m {
             Some(t) => f(t),
@@ -45,22 +45,22 @@ impl<T> Monad<Option<T>> for Option<T> {
         }
     }
 
-    fn unit(t: T) -> Option<T> {
+    fn unit<T>(t: T) -> Option<T> {
         Some(t)
     }
 }
 ```
 
 Though once we try to apply this on ``Result<T, E>`` we run into a problem: what do we do with
-``E``?  ``impl<T, E> Monad<Result<T>> for Result<T, E>``? That will not work since ``Monad<M<T>>``
+``E``?  ``impl<T, E> Monad<Result<T>> for Result<T, E>``? That will not work since ``Monad``
 expects a type with only one type-parameter and ``Result`` has two. That leaves us with two
 options, either denote the higher kinded parameter with a separate syntax, or allow for partial
 application of type-constructors:
 
 ```rust
-impl<T, E> Monad<R<T>> for R<T>
+impl<E> Monad[R<_>] for R
   where R<O> = Result<O, E> {
-    fn bind<F, U>(self, f: F) -> R<U>
+    fn bind<F, T, U>(m: R<T>, f: F) -> R<U>
       where F: FnOnce(T) -> R<U> {
         match m {
           Ok(t)  => f(t),
@@ -68,25 +68,25 @@ impl<T, E> Monad<R<T>> for R<T>
         }
     }
 
-    fn unit(t: T) -> R<T> {
+    fn unit<T>(t: T) -> R<T> {
         Ok(t)
     }
 }
 ```
 
 The purpose of the syntax above would be to create a type alias ``R<O>`` as ``Result<O, E>`` for
-any fixed ``E``, this would allow us to define ``Monad<M<T>>`` on ``R<O>`` since it only requires a
+any fixed ``E``, this would allow us to define ``Monad`` on ``R<O>`` since it only requires a
 single type-parameter.
 
 ## ``Fn``, ``FnMut`` vs ``FnOnce``
 
-Another problematic issue with ``Monad<M<T>>`` is the type of the function ``F`` passed to ``bind``;
+Another problematic issue with ``Monad`` is the type of the function ``F`` passed to ``bind``;
 it will require either ``Fn``, ``FnMut`` or ``FnOnce`` depending on how it is used. Some monads,
 like ``Option<T>``, ``Result<T, E>`` and my own ``Parser`` monad are happily accepting ``FnOnce``
 which is the most permissive generic for the user of ``bind`` since they are allowed to do
 almost anything inside of ``F``.
 
-On the other hand, implementing ``Monad<M<T>>`` for ``Iterator<Item=T>`` requires an ``FnMut`` bound
+On the other hand, implementing ``Monad`` for ``Iterator<Item=T>`` requires an ``FnMut`` bound
 on ``F``, since ``F`` will be executed once for each item in the iterator and that disqualifies
 ``FnOnce``. And for some kind of ``Future<T>`` ``F`` will probably need to be something like
 ``FnOnce + Send + 'static``, and some parallel monad would want ``Fn + Send + 'static``.
@@ -123,7 +123,7 @@ which both degrade performance and increases the risk of users being confused an
 accidentally operating on copies of the data or having to jump through hoops to satisfy the
 type-checker.
 
-This means that the ``Monad<M<T>>`` trait needs to also somehow be generic over the function-type
+This means that the ``Monad`` trait needs to also somehow be generic over the function-type
 used by the concrete implementation while still enforcing the general signature of
 ``Fn*(T) -> M<U>``. This will require [impl specialization]
 since ``FnOnce`` implements ``FnMut`` and ``FnMut`` implements ``Fn`` which means that any attempt
@@ -134,37 +134,37 @@ Another possibility is to have separate implementations of ``Monad``, ``MonadMut
 implementations for the other compatible variants so that a ``MonadOnce`` can be used as a ``Monad``:
 
 ```rust
-trait Unit<M<T>> {
-    fn unit(T) -> M<T>;
+trait Unit[M<_>] {
+    fn unit<T>(T) -> M<T>;
 }
 
-trait Monad<M<T>>: Unit<M<T>> {
-    fn bind<F, U>(self, F) -> M<U>
+trait Monad[M<_>]: Unit[M<_>] {
+    fn bind<F, T, U>(M<T>, F) -> M<U>
       where F: Fn(T) -> M<U>;
 }
 
-trait MonadMut<M<T>>: Unit<M<T>> {
-    fn bind<F, U>(self, F) -> M<U>
+trait MonadMut[M<_>]: Unit[M<_>] {
+    fn bind<F, T, U>(M<T>, F) -> M<U>
       where F: FnMut(T) -> M<U>;
 }
 
-trait MonadOnce<M<T>>: Unit<M<T>> {
-    fn bind<F, U>(self, F) -> M<U>
+trait MonadOnce[M<_>]: Unit[M<_>] {
+    fn bind<F, T, U>(M<T>, F) -> M<U>
       where F: FnOnce(T) -> M<U>;
 }
 
 mod impls {
     use super::{Monad, MonadMut, MonadOnce};
 
-    impl<T, N: MonadOnce<M<T>>> MonadMut<M<T>> for N {
-        fn bind<F, U>(self, f: F) -> M<U>
+    impl<M: MonadOnce> MonadMut[M<_>] for M {
+        fn bind<F, T, U>(m: M<T>, f: F) -> M<U>
           where F: FnMut(T) -> M<U> {
             MonadOnce::bind(self, f)
         }
     }
 
-    impl<T, N: MonadMut<M<T>>> Monad<M<T>> for N {
-        fn bind<F, U>(self, f: F) -> M<U>
+    impl<M: MonadMut> Monad[M<_>] for M {
+        fn bind<F, T, U>(m: M<T>, f: F) -> M<U>
           where F: Fn(T) -> M<U> {
             MonadMut::bind(self, f)
         }
@@ -204,9 +204,9 @@ Here I assume that we can use ``impl Trait`` to denote that it is some concrete 
 normal generic, or otherwise be able to use an associated type in HKT):
 
 ```rust
-impl<T> Monad<impl I<T>> for impl I<T>
+impl<I> Monad[impl I<_>] for impl I
   where I<X> = Iterator<Item=X> {
-    fn bind<U>(self, f: F) -> impl I<U>
+    fn bind<F, T, U>(m: impl I<T>, f: F) -> impl I<U>
       where F: FnMut(T) -> impl I<U> {
         // Create new iterator wrapping self and F yielding items from
         // the iterator f(self.next()). Essentially flat_map but
@@ -249,63 +249,64 @@ Lifetimes which are a part of the monad can be moved out by using partial applic
 type-constructors and treating the lifetime as just another type parameter:
 
 ```rust
-impl<'a, T> Monad<M<T>> for M<T>
+impl<'a, M> Monad[M<_>] for M
   where M<X> = MyType<'a, X> {
-    fn bind<U>(self, f: F) -> M<U>
+    fn bind<F, T, U>(m: M<T>, f: F) -> M<U>
       where F: FnOnce(T) -> M<U> { ... }
 
-    fn unit(t: T) -> M<T> { ... }
+    fn unit<T>(t: T) -> M<T> { ... }
 }
 ```
 
-On the other hand, a monad which is lazy (eg. the ``Iterator`` monad) will require ``Self`` and
+On the other hand, a monad which is lazy (eg. the ``Iterator`` monad) will require ``m`` and
 ``F`` to have the same lifetime as the returned <code>M<&#85;></code> (It will also require the same
 ``impl Trait`` or similar feature to allow different concrete types):
 
 ```rust
-impl<T> Monad<I<T>> for impl I<T>
+impl<I, M> Monad[impl I<_>] for impl I
   where I<X> = Iterator<Item=X> {
-    fn bind<'a, U>(self, f: F) -> impl I<U> + 'a
-      where Self: 'a,
-            F:    FnMut(T) -> impl I<U> + 'a {
-        BindIter { source: self, fun: f, current: UnitIter(None) }
+    fn bind<'a, S, F, T, U>(m: S, f: F) -> impl I<U> + 'a
+      where S: I<T> + 'a,
+            F: FnMut(T) -> impl I<U> + 'a {
+        BindIter { source: m, fun: f, current: UnitIter(None) }
     }
 
-    fn unit(t: T) -> I<T> {
+    fn unit<T>(t: T) -> impl I<T> {
         UnitIter(Some(t))
     }
 }
 ```
 
-Note the ``'a`` constraint on ``Self``, ``F`` and the return of ``bind``. This is necessary
+Note the ``'a`` constraint on ``S``, ``F`` and the return of ``bind``. This is necessary
 because lifetime elision will restrict the lifetimes specified on ``bind`` to be (using
 ``+ 'lifetime`` to detail the restriction)
-<code>fn bind(self + 'a, f: F + 'b) -> I<&#85;> + 'a where F: FnMut(T + 'c) -> I<&#85;> + 'c</code> and ``'c``
+<code>fn bind(m + 'a, f: F + 'b) -> I<&#85;> + 'a where F: FnMut(T + 'c) -> I<&#85;> + 'c</code> and ``'c``
 shorter than ``'b`` which is shorter than ``'a``. So either ``F`` (elide all lifetimes) or
-``Self`` (when ``'a`` is added to ``F`` and the return of ``bind``) will not live long enough
+``S`` (when ``'a`` is added to ``F`` and the return of ``bind``) will not live long enough
 without these extra annotations.
 
-The ``Option``, ``Result`` &mdash; and other types which do not need ``F`` and/or ``Self`` to live as
+The ``Option``, ``Result`` &mdash; and other types which do not need ``F`` and/or ``S`` to live as
 long as the return from ``bind`` &mdash; will not use this constraint at all.
 
-This means that ``Monad<M<T>>`` not only needs to be generic over the type it is implemented on
+This means that ``Monad[M<_>]`` not only needs to be generic over the type it is implemented on
 and the ``Fn*`` type it uses, it also needs to be generic over the lifetimes in the signature
 of ``bind``. Another way to accomplish this would be to let traits be used as associated types,
 then the desired function-trait can be used as an associated type by using the ``unboxed_closure``
 feature.
 
-So now we have a ``Monad<M<T>>`` trait which looks more like this:
+So now we have a ``Monad[M<_>]`` trait which looks more like this:
 
 ```rust
 // Need to be separate due to inference issues
-trait Unit<M<T>> {
-    fn unit(T) -> M<T>;
+trait Unit[M<_>] {
+    fn unit<T>(T) -> M<T>;
 }
 
 // Separate trait just for bind since F is intended to be used as a free
-// generic specified by the trait-implementation.
-trait Monad<M<T>, F>: Unit<M<T>> {
-    fn bind<U>(self, F) -> M<U>
+// generic specified by the trait-implementation, and T needs to be available
+// for the Fn* generic
+trait Monad[M<_>]<T, F>: Unit[M<_>] {
+    fn bind<U>(M<T>, F) -> M<U>
       // Let's assume we can use the trait Func and its associated types
       // Input and Output to enforce a function-signature
       where F: Func,
@@ -315,25 +316,25 @@ trait Monad<M<T>, F>: Unit<M<T>> {
 ```
 
 This enables us to add lifetimes to ``F``, and with the help of ``impl Trait`` in type-position
-we can also add the same lifetime to ``Self`` and the return of ``bind``. It is a bit cumbersome,
+we can also add the same lifetime to ``m`` and the return of ``bind``. It is a bit cumbersome,
 but looks promising:
 
 ```rust
 // Option monad
-impl<T> Unit<Option<T>> for Option<T> {
-    fn unit(t: T) -> Option<T> { Some(t) }
+impl Unit[Option<_>] for Option {
+    fn unit<T>(t: T) -> Option<T> { Some(t) }
 }
 
-impl<T, F> Monad<Option<T>, F> for Option<T>
+impl<T, F> Monad[Option<_>]<T, F> for Option
   // We leave out the return type definition to bind using the feature
   // unboxed_closure to be able to use the <> notation. If we are not
   // allowed to use this feature we also need to move U to the Monad trait
   where F: FnMut<(T,)> {
-    fn bind<U>(self, f: F) -> Option<U>
+    fn bind<U>(m: Option<T>, f: F) -> Option<U>
       where F: Func,
             F::Input  = (T,),
             F::Output = Option<U> {
-        match self {
+        match m {
             Some(t) => f(t),
             None    => None,
         }
@@ -341,18 +342,18 @@ impl<T, F> Monad<Option<T>, F> for Option<T>
 }
 
 // Iterator monad
-impl<T> Unit<I<T>> for impl I<T>
+impl Unit[I<_>] for impl I
   where I<X> = Iterator<Item=X> {
-    fn unit(T) -> impl I<T> { ... }
+    fn unit<T>(T) -> impl I<T> { ... }
 }
 
-impl<'a, T, F> Monad<impl I<T>, F> for impl I<T>
+impl<'a, T, F> Monad[impl I<_>]<T, F> for impl I
   // Use the lifetime 'a here to restrict all uses of I<_>
   where I<X> = Iterator<Item=X> + 'a,
         // Here we can add that F needs to live at least as long as
         // the return from bind (and Self):
         F: FnMut<(T,)> + 'a {
-    fn bind<U>(self, f: F) -> impl I<U>
+    fn bind<U>(m: impl I<T>, f: F) -> impl I<U>
       where F: Func,
             F::Input  = (T,),
             F::Output = impl I<U> {
@@ -390,18 +391,18 @@ since that would result in a lot of different, somewhat-incompatible, monad-trai
 
 # Attempting to use the ``Monad`` trait in a generic way
 
-The code above is all ok as long as we do not try to actually be generic over the ``Monad<M<T>>``
+The code above is all ok as long as we do not try to actually be generic over the ``Monad``
 trait and let the compiler infer all the types. Then the ``Monad::bind`` and ``Monad::unit``
 functions work pretty well. But what if we try to define functions generic over ANY ``Monad``?
 
 ```rust
 fn liftM2<M, MT, MU, F, H, T, U>(f: F, m1: MT, m2: MU)
-    -> impl Monad<F::Output, H>
-  where M:  Monad<M<_>, _>,
-        MT: M<T>,
-        MU: M<U>,
-        F:  Fn<(T, U)>,
-        H:  Fn<(U,)> {
+    -> M<F::Output, H>
+  where M:   Monad,
+        MT = M<T>,
+        MU = M<U>,
+        F:   Fn<(T, U)>,
+        H:   Fn<(U,)> {
     Monad::bind(m1, move |x1| Monad::bind(m2, move |x2| Unit::unit(f(x1, x2))))
 }
 ```
@@ -412,11 +413,11 @@ restricts the user to the most basic use of ``bind``.  By using "associated trai
 simplify it a tiny bit:
 
 ```rust
-fn liftM2<M, MT, MU, F, T, U>(f: F, m1: MT, m2: MU) -> impl Monad<F::Output>
-  where M:  Monad<_>,
-        MT: Monad<M<T>>,
-        MU: Monad<M<U>>,
-        F:  Fn<(T, U)> {
+fn liftM2<M, MT, MU, F, T, U>(f: F, m1: MT, m2: MU) -> M<F::Output>
+  where M:   Monad,
+        MT = M<T>,
+        MU = M<U>,
+        F:   Fn<(T, U)> {
     Monad::bind(m1, move |x1| Monad::bind(m2, move |x2| Unit::unit(f(x1, x2))))
 }
 ```
@@ -469,7 +470,6 @@ returns a different concrete type compared to the original type.
 There are a few additional features which can be added to this list if ease of use is considered,
 and it is not just limited to these:
 
-* Allowing traits to be implemented on type-constructors.
 * Allowing types and function signatures to be generic over type-constructors.
 * Allowing traits to be used in type-position, letting the compiler monomorphize the type.
 * Allowing restrictions defined in traits on associated types.
