@@ -152,6 +152,8 @@ Chomp      | 0.1.1
 Combine    | 1.1.0
 Nom        | 1.0.1
 
+**EDIT:** Posted on reddit: [/r/rust](https://www.reddit.com/r/rust/comments/3ulf3k/parser_combinators_the_road_to_chomp_01/)
+
 [Chomp]: https://github.com/m4rw3r/chomp/blob/6bb50e22513c6b670dd1c22ba144be2b6884c8ab/examples/http_parser.rs
 [Nom]: https://gist.github.com/m4rw3r/df10573763ff838988a8
 [Combine]: https://gist.github.com/m4rw3r/a1f8d17e120828963a19
