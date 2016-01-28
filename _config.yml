@@ -1,8 +1,4 @@
-# Permalinks
-#
-# Use of `relative_permalinks` ensures post links from the index work properly.
 permalink:           pretty
-relative_permalinks: true
 
 # Setup
 title:               m4rw3r
@@ -12,7 +8,8 @@ paginate:            1
 baseurl:             ""
 markdown:            redcarpet
 redcarpet:
-  extensions: ["no_intra_emphasis", "fenced_code_blocks", "autolink", "tables", "with_toc_data"]
+  extensions:        ["no_intra_emphasis", "fenced_code_blocks", "autolink", "tables", "with_toc_data"]
+gems:                ["jekyll-paginate"]
 
 # Assets
 #
