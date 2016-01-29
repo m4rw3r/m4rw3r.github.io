@@ -98,7 +98,7 @@ try {
     let data = read_values()?;
 
     if logging_on()? {
-        log_values(values)?;
+        log_values(data)?;
     }
 
     data
@@ -189,7 +189,7 @@ do {
     log  <- logging_on();
 
     if log {
-        log_values(values)
+        log_values(data)
     } else {
         Ok(())
     };
