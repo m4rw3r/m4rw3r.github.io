@@ -344,3 +344,5 @@ do {
 
 Personally I am a fan of `do`-notation since it much more general than just a control-flow-specific
 language-construction and allows much more advanced ways of composing operations.
+
+**EDIT:** Posted on reddit: [/r/rust](https://www.reddit.com/r/rust/comments/435572/blog_the_operator_and_try_vs_do/)
