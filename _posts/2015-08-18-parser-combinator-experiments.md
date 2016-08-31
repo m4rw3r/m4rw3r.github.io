@@ -75,7 +75,7 @@ Expanded version of ``do``-syntax:
 
 ### Manually threading state
 
-```rust
+~~~rust
 fn request_line<'a>(p: Empty<'a, u8>) -> Parser<'a, u8, Request<'a>, Error<u8>> {
     bind(take_while1(p, is_token), |p, method|
          bind(take_while1(p, is_space), |p, _|
@@ -84,11 +84,11 @@ fn request_line<'a>(p: Empty<'a, u8>) -> Parser<'a, u8, Request<'a>, Error<u8>> 
                         bind(http_version(p), |p, version|
                              ret(p, Request{method: method, uri: uri, version: version,}))))))
 }
-```
+~~~
 
 ### Boxed
 
-```rust
+~~~rust
 fn request_line<'a>() -> Parser<'a, 'a, u8, Request<'a>, Error<u8>> {
     bind(take_while1(is_token), move |method|
          bind(take_while1(is_space), move |_|
@@ -97,7 +97,7 @@ fn request_line<'a>() -> Parser<'a, 'a, u8, Request<'a>, Error<u8>> {
                         bind(http_version(), move |version|
                              ret(Request{method: method, uri: uri, version: version,}))))))
 }
-```
+~~~
 
 And here is the difference in the http-example once the ``mdo!`` macro is used:
 [Diff](https://gist.github.com/m4rw3r/6d1ca498f8e4abc24dbd)

@@ -92,7 +92,7 @@ now have an even simpler ``Error`` without any data at all!
 Further, we can optimize ``many1`` to actually not need to stack or wrap errors &mdash; instead it just
 needs to pass through the existing error &mdash; because of the following equivalence:
 
-```
+~~~
 // Haskell
 many1 p = p >>= \x -> many p >>= \xs -> return x:xs
 
@@ -100,7 +100,7 @@ many1 p = p >>= \x -> many p >>= \xs -> return x:xs
 many1(p) = bind(p(m), |m, x|
     bind(many(m, p), |m, xs|
         ret(m, xs.insert(0, x))))
-```
+~~~
 
 This is of course a simplification since the result of ``many`` and ``many1`` are not always
 vectors. And it still requires some modifications to the internal ``Iterator`` used by ``many``
@@ -109,22 +109,22 @@ did in the previous version.
 
 So we will have the following two simplified ``Error`` types to compare:
 
-```rust
+~~~rust
 struct Error;
-```
+~~~
 
-```rust
+~~~rust
 enum Error<I>
   where I: Copy {
     Expected(I),
     Unexpected,
     String(Vec<I>)
 }
-```
+~~~
 
 And then the common ``Parser`` implementation:
 
-```rust
+~~~rust
 enum State<'a, I, T, E>
   where I: 'a {
     Item(&'a [I], T)
@@ -136,7 +136,7 @@ enum State<'a, I, T, E>
 // Newtype wrapper to avoid exposing the internal state
 pub struct Parser<'a, I, T, E>(State<'a, I, T, E>)
   where I: 'a;
-```
+~~~
 
 ## Custom errors
 
@@ -152,27 +152,27 @@ some flexibility in handling errors, but I am not certain this is enough.
 This works well when bind is used like this since the first error will be converted to the error
 type of ``my_parser``:
 
-```rust
+~~~rust
 mdo!{input,
            char(b':');
     data = my_parser();
 
-	ret data;
+    ret data;
 };
-```
+~~~
 
 It does not work so well when it is done in reverse however, as that will attempt to convert from
 the potentially user-defined error-type from ``my_parser`` into the ``Error`` type of the parser
 library:
 
-```rust
+~~~rust
 mdo!{input,
     data = my_parser();
            char(b'\n');
 
     ret data
 };
-```
+~~~
 
 Another problem with this is inference, since the second parameter does not always have an error
 AND a value specified for its type (eg. it is common to just end with a ``ret`` or ``err``). This
@@ -187,14 +187,14 @@ the ``ret``.
 
 Enabling constructions like this will solve the issue:
 
-```rust
+~~~rust
 mdo!{input,
     data = my_parser();
            char(b'\n').map_err(MyError::ParseError);
 
     ret data
 };
-```
+~~~
 
 This exact syntax does not play nice with the ``mdo!`` macro at the moment, but it is something I
 am working on.
@@ -224,12 +224,12 @@ like it is just waiting for some more testing in the wild before it is enabled b
 Since the default type parameters do not actually affect stable at all it is a harmles addition
 to the generic types:
 
-```rust
+~~~rust
 pub fn bind<'a, I, T, E, F, U, V = E>(m: Parser<'a, I, T, E>, f: F)
     -> Parser<'a, I, U, V>
   where V: From<E>,
         F: FnOnce(Input<'a, I>, T) -> Parser<'a, I, U, V>;
-```
+~~~
 
 Note ``V = E`` above.
 

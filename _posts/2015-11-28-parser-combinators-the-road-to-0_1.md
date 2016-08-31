@@ -46,7 +46,7 @@ The parser type is actually a pair of linear types, `Input<'a, I>` and `ParseRes
 
 Example of it in action with comments and full type annotations (skipping input and error type):
 
-```rust
+~~~rust
 // `Stream::parse` accepts a closure taking an `Input` and expects a
 // `ParseResult` as a return value.
 let r: Result<MyData, _> = buffer.parse(|i: Input<_>| -> ParseResult<_, MyData, _> {
@@ -65,7 +65,7 @@ let r: Result<MyData, _> = buffer.parse(|i: Input<_>| -> ParseResult<_, MyData, 
     // And here we hand the `ParseResult` back to `parse` which destructures it
     // for the user and also manages any input state.
 });
-```
+~~~
 
 And to prevent the state from being observed in an uncontrolled manner there are no public properties or methods which allow the state to be seen. This will make it hard to read data out-of-band and disrupt the parsing, which makes the high-level parsers to be very composable.
 
@@ -81,7 +81,7 @@ This feature was a must, I started detailing the syntax I wanted for it months a
 
 Normally you would have to keep on chaining calls to `bind` and wrap your code in closure after closure like this (this is typical of monadic code):
 
-```rust
+~~~rust
 take_while1(i, is_token).bind(|i, method|
     take_while1(i, is_space).then(|i|
         take_while1(i, is_not_space).bind(|i, uri|
@@ -92,13 +92,13 @@ take_while1(i, is_token).bind(|i, method|
                         uri:     uri,
                         version: version,
                     }))))))
-```
+~~~
 
 This is not easy to parse a human, it is way too noisy and the assignment to values through `bind` is not easy to spot. If you read it line by line it might be simple, but not as a whole.
 
 Using the [parse!](https://github.com/m4rw3r/chomp/blob/6bb50e22513c6b670dd1c22ba144be2b6884c8ab/src/macros.rs#L76) macro we can instead write the above code like this:
 
-```rust
+~~~rust
 parse!{i;
     let method  = take_while1(is_token);
                   take_while1(is_space);
@@ -112,7 +112,7 @@ parse!{i;
         version: version,
     }
 }
-```
+~~~
 
 The result is the same, the performance is the same and the compile time is not affected much at all, but it is much easier to read and understand what is happening.
 

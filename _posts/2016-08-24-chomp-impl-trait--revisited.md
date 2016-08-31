@@ -18,9 +18,9 @@ The monad-like state of Chomp makes it possible to easily compose parser-actions
 
 Parsers themselves do not implement any specific trait, instead they all follow about the same function-signature:
 
-```rust
+~~~rust
 Fn*<I: Input>(I, ...) -> ParseResult<I, T, E>
-```
+~~~
 
 where `Fn*` is the appropriate function-trait (depending on internal implementation of the parser, `many` requires a `FnMut`parser for example to be able to repeat) and `T` and `E` are success and error respectively.
 
@@ -30,29 +30,29 @@ There are two issues with this way of structuring parsers; first all input-state
 
 A proper monad on the other hand does no actual parsing in the parser-functions themselves (like `any`, `string`, `take_while`, `many` and even user-defined parsers). The `ParseResult` type no longer exists and instead all parser-functions produce types implementing the `Parser` trait which are later invoked with a parser input:
 
-```rust
+~~~rust
 trait Parser<I: Input> {
     type Output;
     type Error;
 
     fn parse(self, I) -> (I, Result<Self::Output, Self::Error>);
 }
-```
+~~~
 
 This trait is analogous to the following closure-signature:
 
-```rust
+~~~rust
 Fn(input) -> (input-remainder, Result<success, error>)
-```
+~~~
 
 which will create a Parser monad when used with the appropriate `bind` and `return` implementations:
 
-```rust
+~~~rust
 fn return(T)  -> FnOnce(I) -> (I, Result<T, E>);
 fn bind(A, B) -> FnOnce(I) -> (I, Result<U, E>)
   where A: FnOnce(I) -> (I, Result<T, E>)
         B: FnOnce(T) -> FnOnce(I) -> (I, Result<U, E>);
-```
+~~~
 
 Preferably `impl Trait` should be used as much as possible since it prevents heavyweight syntax, but trait methods cannot return anomymized types (yet). This means that the basic combinators (like `bind`, `then` and `map`) provided on the `Parser` trait will, just like in [`Future` in the `futures` crate](http://alexcrichton.com/futures-rs/futures/trait.Future.html), have concrete types for those combinators.
 
@@ -60,7 +60,7 @@ Preferably `impl Trait` should be used as much as possible since it prevents hea
 
 The basic parsers and combinators were no issues to convert whatsoever, mainly the function signature had to change to return an `impl Parser` and the function body had to be wrapped in a closure.  Here is an example of the `or` combinator difference:
 
-```rust
+~~~rust
 pub fn or<I: Input, F, G>(f: F, g: G) -> impl Parser<I, Output=F::Output, Error=F::Error>
   where F: Parser<I>,
         G: Parser<I, Output=F::Output, Error=F::Error> {
@@ -73,11 +73,11 @@ pub fn or<I: Input, F, G>(f: F, g: G) -> impl Parser<I, Output=F::Output, Error=
         }
     }
 }
-```
+~~~
 
 It is almost identical to the monad-like definition:
 
-```rust
+~~~rust
 pub fn or<I: Input, T, E, F, G>(i: I, f: F, g: G) -> ParseResult<I, T, E>
   where F: FnOnce(I) -> ParseResult<I, T, E>,
         G: FnOnce(I) -> ParseResult<I, T, E> {
@@ -88,7 +88,7 @@ pub fn or<I: Input, T, E, F, G>(i: I, f: F, g: G) -> ParseResult<I, T, E>
         (b, Err(_)) => g(b.restore(m)),
     }
 }
-```
+~~~
 
 Same goes for the bounded combinators; `many`, `many1`, `skip_many` and `many_till`, with one difference; the parameter is not the parser itself but instead a parser-constructor (ie. an `FnMut() -> Parser`, to be able to reuse parsers without requiring them to be `Clone`). The parser constructor and inner iterator-type will be a part of the closure being returned, the iterator-instance will be constructed and used in `FromIterator` when the parser is run.
 
@@ -98,7 +98,7 @@ Sadly for the bounded combinators I had to do the same thing as with the `Parser
 
 This made the `sep_by` function kinda ugly, but the alternative was to have 5 copies of `sep_by` for the different types of ranges:
 
-```rust
+~~~rust
 pub fn sep_by<I, T, F, G, P, Q, R>(r: R, f: F, sep: G) -> R::ManyParser
   where I: Input,
         T: FromIterator<P::Output>,
@@ -114,7 +114,7 @@ pub fn sep_by<I, T, F, G, P, Q, R>(r: R, f: F, sep: G) -> R::ManyParser
         _i:   PhantomData,
     })
 }
-```
+~~~
 
 ## Performance
 

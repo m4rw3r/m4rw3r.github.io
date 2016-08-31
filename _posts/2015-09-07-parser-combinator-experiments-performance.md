@@ -12,25 +12,25 @@ performance tests since it is pretty slow. The previous version was a pretty sim
 some significant overhead since it was written to be easy to read and to be comparable to the
 ``notInClass`` function from the Haskell parsers in terms of readability:
 
-```rust
+~~~rust
 fn is_token(c: u8) -> bool {
     c < 128 && c > 31 && b"()<>@,;:\\\"/[]?={} \t".iter()
                            .position(|&i| i == c).is_none()
 }
-```
+~~~
 
 The version above is performing a naive linear search, which is far from the most efficient method
 of determining if a character is in the given set. Attoparsec actually creates a binary search
 tree, which is much faster. Here is the optimized version Geoffroy suggested:
 
-```rust
+~~~rust
 fn is_token(c: u8) -> bool {
     // roughly follows the order of ascii chars: "\"(),/:;<=>?@[\\]{} \t"
     c < 128 && c > 32 && c != b'\t' && c != b'"' && c != b'(' && c != b')' &&
         c != b',' && c != b'/' && !(c > 57 && c < 65) && !(c > 90 && c < 94) &&
         c != b'{' && c != b'}'
 }
-```
+~~~
 
 This is of course much harder to read but gives a decent performance boost. Since it affects all
 Rust parser-combinators I have replaced their ``is_token`` implementations with the optimized
@@ -88,7 +88,7 @@ But with the experimental branch we can use the ``impl Trait`` notation to make 
 stack-allocated: ``impl Fn(&[u8]) -> Option<(T, &[u8])>``, of course this is not something we want
 to copy all over the place, so we implement a trait which is implemented for ``Fn(&[u8]) -> Option<(T, &[u8])>``:
 
-```rust
+~~~rust
 pub trait Parser<'a, T> {
     fn parse(self, &'a [u8]) -> Option<(T, &'a [u8])>;
 }
@@ -99,7 +99,7 @@ impl<'a, T> Parser<'a, T> for F
         self(i)
     }
 }
-```
+~~~
 
 This is a very simplified signature which does not support any error handling or incomplete input,
 or different input types. The ``'a`` lifetime is exposed through the ``Parser<'a, T>`` type to
@@ -108,7 +108,7 @@ unless constructions like this are needed.
 
 The above allows us to write:
 
-```rust
+~~~rust
 struct MyData<'a> {
     name:      &'a [u8],
     last_name: &'a [u8],
@@ -132,7 +132,7 @@ fn main() {
     println!("{:?}", parser.parse(buf));
     // MyData{name: &b"Martin", last_name: &b"Wernstål"}
 }
-```
+~~~
 
 ## Performance
 

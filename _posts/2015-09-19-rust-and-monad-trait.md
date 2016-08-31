@@ -24,18 +24,18 @@ serve as some kind of start for a discussion about a real RFC.
 This is a definiton of ``Monad`` which is similar to the definition Scala uses, with the
 difference that the ``Applicative`` trait is not involved:
 
-```rust
+~~~rust
 trait Monad[M<_>] {
     fn bind<F, T, U>(M<T>, F) -> M<U>
       where F: FnOnce(T) -> M<U>;
 
     fn unit<T>(T) -> M<T>;
 }
-```
+~~~
 
 This looks pretty neat and works nicely for ``Option<T>``:
 
-```rust
+~~~rust
 impl Monad[Option<_>] for Option {
     fn bind<F, T, U>(m: Option<T>, f: F) -> Option<U>
       where F: FnOnce(T) -> Option<U> {
@@ -49,7 +49,7 @@ impl Monad[Option<_>] for Option {
         Some(t)
     }
 }
-```
+~~~
 
 Though once we try to apply this on ``Result<T, E>`` we run into a problem: what do we do with
 ``E``?  ``impl<T, E> Monad<Result<T>> for Result<T, E>``? That will not work since ``Monad``
@@ -57,7 +57,7 @@ expects a type with only one type-parameter and ``Result`` has two. That leaves 
 options, either denote the higher kinded parameter with a separate syntax, or allow for partial
 application of type-constructors:
 
-```rust
+~~~rust
 impl<E> Monad[R<_>] for R
   where R<O> = Result<O, E> {
     fn bind<F, T, U>(m: R<T>, f: F) -> R<U>
@@ -72,7 +72,7 @@ impl<E> Monad[R<_>] for R
         Ok(t)
     }
 }
-```
+~~~
 
 The purpose of the syntax above would be to create a type alias ``R<O>`` as ``Result<O, E>`` for
 any fixed ``E``, this would allow us to define ``Monad`` on ``R<O>`` since it only requires a
@@ -94,7 +94,7 @@ on ``F``, since ``F`` will be executed once for each item in the iterator and th
 ``FnOnce`` is desirable since it allows the user of the monad to do simple sequencing without
 putting any requirements on the code used, like this:
 
-```rust
+~~~rust
 // Note: Not copy, and not clone
 #[derive(Debug)]
 struct Foo;
@@ -110,7 +110,7 @@ match r {
     Ok((foo, data)) => println!("Foo: {:?}, the answer is: {}", foo, data),
     Err(e)          => println!("Something went wrong: {:?}", e),
 }
-```
+~~~
 
 This typechecks nicely with a ``bind(M<T>, FnOnce(T) -> M<U>)``, but would fail if ``bind``
 required ``F`` to be a ``FnMut`` or ``Fn`` since ``Foo`` in the code above is not ``Clone`` or
@@ -133,7 +133,7 @@ Another possibility is to have separate implementations of ``Monad``, ``MonadMut
 ``MonadOnce`` where they all have a different ``Fn*`` type. In addition to this we provide default
 implementations for the other compatible variants so that a ``MonadOnce`` can be used as a ``Monad``:
 
-```rust
+~~~rust
 trait Unit[M<_>] {
     fn unit<T>(T) -> M<T>;
 }
@@ -170,7 +170,7 @@ mod impls {
         }
     }
 }
-```
+~~~
 
 Example without higher kinded types: [playground](https://play.rust-lang.org/?gist=4480a38393cd27097bb2&version=stable).
 
@@ -203,7 +203,7 @@ Here I assume that we can use ``impl Trait`` to denote that it is some concrete 
 ``impl I<T> where I<X> = Iterator<Item=X>`` (we need to somehow alias the associated type into a
 normal generic, or otherwise be able to use an associated type in HKT):
 
-```rust
+~~~rust
 impl<I> Monad[impl I<_>] for impl I
   where I<X> = Iterator<Item=X> {
     fn bind<F, T, U>(m: impl I<T>, f: F) -> impl I<U>
@@ -217,17 +217,17 @@ impl<I> Monad[impl I<_>] for impl I
         // Iterator yielding the item once
     }
 }
-```
+~~~
 
 This monad would allow us to build lazy list-comprehensions and similar constructions:
 
-```rust
+~~~rust
 let r: Vec<(u32, u32)> = 0..10.iter()
                               .bind(|i| i..10.iter()
                                              .bind(|j| Monad::unit((i, j))))
                               .collect();
 // r = [(0, 0), (0, 1), ..., (1, 1), (1, 2), ..., (8, 8), (8, 9), (9, 9)]
-```
+~~~
 
 Another possibility to solve this would be to use a newtype allowing ``impl Trait`` inside it. But
 it might be problematic and confusing for the the user since suddenly you have a type which acts as
@@ -248,7 +248,7 @@ right? No, we still have another class of types which exists in Rust: lifetimes.
 Lifetimes which are a part of the monad can be moved out by using partial application of
 type-constructors and treating the lifetime as just another type parameter:
 
-```rust
+~~~rust
 impl<'a, M> Monad[M<_>] for M
   where M<X> = MyType<'a, X> {
     fn bind<F, T, U>(m: M<T>, f: F) -> M<U>
@@ -256,13 +256,13 @@ impl<'a, M> Monad[M<_>] for M
 
     fn unit<T>(t: T) -> M<T> { ... }
 }
-```
+~~~
 
 On the other hand, a monad which is lazy (eg. the ``Iterator`` monad) will require ``m`` and
 ``F`` to have the same lifetime as the returned <code>M<&#85;></code> (It will also require the same
 ``impl Trait`` or similar feature to allow different concrete types):
 
-```rust
+~~~rust
 impl<I, M> Monad[impl I<_>] for impl I
   where I<X> = Iterator<Item=X> {
     fn bind<'a, S, F, T, U>(m: S, f: F) -> impl I<U> + 'a
@@ -275,7 +275,7 @@ impl<I, M> Monad[impl I<_>] for impl I
         UnitIter(Some(t))
     }
 }
-```
+~~~
 
 Note the ``'a`` constraint on ``S``, ``F`` and the return of ``bind``. This is necessary
 because lifetime elision will restrict the lifetimes specified on ``bind`` to be (using
@@ -296,7 +296,7 @@ feature.
 
 So now we have a ``Monad[M<_>]`` trait which looks more like this:
 
-```rust
+~~~rust
 // Need to be separate due to inference issues
 trait Unit[M<_>] {
     fn unit<T>(T) -> M<T>;
@@ -313,13 +313,13 @@ trait Monad[M<_>]<T, F>: Unit[M<_>] {
             F::Input  = (T,),
             F::Output = M<U>;
 }
-```
+~~~
 
 This enables us to add lifetimes to ``F``, and with the help of ``impl Trait`` in type-position
 we can also add the same lifetime to ``m`` and the return of ``bind``. It is a bit cumbersome,
 but looks promising:
 
-```rust
+~~~rust
 // Option monad
 impl Unit[Option<_>] for Option {
     fn unit<T>(t: T) -> Option<T> { Some(t) }
@@ -362,7 +362,7 @@ impl<'a, T, F> Monad[impl I<_>]<T, F> for impl I
         ...
     }
 }
-```
+~~~
 
 And now we actually have a ``Monad`` trait which allows for different ``Fn*`` types, different
 lifetime requirements on the function passed to ``bind`` and it can also be implemented for
@@ -395,7 +395,7 @@ The code above is all ok as long as we do not try to actually be generic over th
 trait and let the compiler infer all the types. Then the ``Monad::bind`` and ``Monad::unit``
 functions work pretty well. But what if we try to define functions generic over ANY ``Monad``?
 
-```rust
+~~~rust
 fn liftM2<M, MT, MU, F, H, T, U>(f: F, m1: MT, m2: MU)
     -> M<F::Output, H>
   where M:   Monad,
@@ -405,14 +405,14 @@ fn liftM2<M, MT, MU, F, H, T, U>(f: F, m1: MT, m2: MU)
         H:   Fn<(U,)> {
     Monad::bind(m1, move |x1| Monad::bind(m2, move |x2| Unit::unit(f(x1, x2))))
 }
-```
+~~~
 
 The above will actually not work. Firstly, the generic ``H`` will not be possible to infer.
 Secondly, all the different ``Fn*`` parameters are creating lots of unnecessary noise as well as
 restricts the user to the most basic use of ``bind``.  By using "associated traits" we can
 simplify it a tiny bit:
 
-```rust
+~~~rust
 fn liftM2<M, MT, MU, F, T, U>(f: F, m1: MT, m2: MU) -> M<F::Output>
   where M:   Monad,
         MT = M<T>,
@@ -420,7 +420,7 @@ fn liftM2<M, MT, MU, F, T, U>(f: F, m1: MT, m2: MU) -> M<F::Output>
         F:   Fn<(T, U)> {
     Monad::bind(m1, move |x1| Monad::bind(m2, move |x2| Unit::unit(f(x1, x2))))
 }
-```
+~~~
 
 It is still very far from being ergonomic to use. I suspect that we will need to be able to
 implement traits for types without having to specify their type-parameters, as well as using
@@ -428,13 +428,13 @@ traits and types which are partially applied as types and type-parameters. This 
 to use both the "associated traits" and the types implenting traits as a type-constructors if
 their type-parameters are not fully specified:
 
-```rust
+~~~rust
 fn liftM2<M, F, T, U>(f: F, m1: M<T>, m2: M<U>) -> M<F::Output>
   where M: Monad,
         F: M::BindFn<(T, U)> {
     Monad::bind(m1, move |x1| Monad::bind(m2, move |x2| Unit::unit(f(x1, x2))))
 }
-```
+~~~
 
 The above code requires the use of traits in place of concrete types, having the compiler
 monomorphize them to concrete types without having to be explicitly generic over them. This is
@@ -476,7 +476,7 @@ and it is not just limited to these:
 
 This would allow us to hopefully write ``Monad`` as something more like this:
 
-```rust
+~~~rust
 trait Monad
   // The type monad is implemented on must be a 1-arity type-constructor
   where Type: <_> -> {
@@ -508,7 +508,7 @@ impl Monad for Option {
 
     fn unit<T>(t: T) -> Option<T> { Some(t) }
 }
-```
+~~~
 
 [impl specialization]: https://github.com/rust-lang/rfcs/pull/1210
 

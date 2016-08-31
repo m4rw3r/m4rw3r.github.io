@@ -16,25 +16,25 @@ The RFC proposes a `?` operator which is a compiler-assisted rewrite of expressi
 characters.  It is a unary suffix operator which can be placed on an expression to unwrap the value
 on the left hand side of `?` while propagating any error through an early return:
 
-```rust
+~~~rust
 File::create("foo.txt")?.write_all(b"Hello world!")
-```
+~~~
 
 Would be transformed to:
 
-```rust
+~~~rust
 match File::create("foo.txt") {
     Ok(t)  => t.write_all(b"Hello world!"),
     Err(e) => return Err(e.into()),
 }
-```
+~~~
 
 On its own `?` is just syntactic sugar for the `try!` macro, making it easier to write code
 chaining expressions which can fail:
 
-```rust
+~~~rust
 try!(File::create("foo.txt")).write_all(b"Hello world!")
-```
+~~~
 
 # `try` and `catch`
 
@@ -43,14 +43,14 @@ the `?` operator. Essentially the early returns would jump to the `catch` block 
 `try`-`catch` expression would assume that value. If no `catch` block is provided the `try` block
 will return a wrapped result:
 
-```rust
+~~~rust
 try {
     let mut f = File::create("foo.txt")?;
     f.write_all(b"Hello world!")?
 }
 // can also be written as
 try { File::create("foo.txt")?.write_all(b"Hello world")? }
-```
+~~~
 
 Note that the `?` is required at the last line since we want a `Result<(), io::Error>`, not a
 `Result<Result<(), io::Error>, io::Error>`. The `Result` type will automatically re-wrap the
@@ -59,7 +59,7 @@ a `Result<T, E>` without the need to wrap the return value yourself.
 
 Adding the `catch` would be equivalent to using `Result::or_else` with `try` and `match`:
 
-```rust
+~~~rust
 try {
     let mut f = File::create("foo.txt")?;
     f.write_all(b"Hello world!")?
@@ -70,18 +70,18 @@ catch {
         println!("{}", e)
     }
 }
-```
+~~~
 
 Is equivalent to:
 
-```rust
+~~~rust
 try {
     let mut f = File::create("foo.txt")?;
     f.write_all(b"Hello world!")?
 }.or_else(|e|
     println!("{}", e)
 )
-```
+~~~
 
 The difference here is that any `return` inside of `Result::or_else` cannot immediately result in
 an early return.
@@ -89,7 +89,7 @@ an early return.
 The `?` also allows us to use it at an arbitrary nesting within the `try` block (and in code in
 general):
 
-```rust
+~~~rust
 fn logging_on()                  -> Result<bool, io::Error>     { ... }
 fn read_values()                 -> Result<SomeData, io::Error> { ... }
 fn log_values(values: &SomeData) -> Result<(), io::Error>       { ... }
@@ -103,7 +103,7 @@ try {
 
     data
 }
-```
+~~~
 
 # Do-notation
 
@@ -112,12 +112,12 @@ dealing with the computation within a context. For example values of types like 
 `Result` enable us to perform operations without having to worry about the failure-state of the
 same inside of the `do`-expression:
 
-```rust
+~~~rust
 do {
     mut f <- File::create("foo.txt");
     f.write_all(b"Hello world!")
 }
-```
+~~~
 
 The first line inside of the `do`-block is a so called monadic bind: it will bind the value
 contained inside of the type on the right of `<-` to the identifier on the left for the rest of
@@ -136,17 +136,17 @@ of `write_all`. The two expressions are compatible since they both return a valu
 
 The above code desugars to:
 
-```rust
+~~~rust
 File::create("foo.txt").and_then(|mut f|
     f.write_all(b"Hello world!"))
-```
+~~~
 
 Each expression in the `do`-notation above evaluates to some `Result<T, io::Error>` (for any `T`) which
 means that when adding expressions not resulting in the `Result<T, io::Error>` type they need to be
 wrapped (this is called "lifting" in Haskell terminology) to produce a `Result` which then fits into the
 `do`-block:
 
-```rust
+~~~rust
 let h = "Hello".to_owned();
 
 do {
@@ -155,11 +155,11 @@ do {
 
     f.write_all(s)
 }
-```
+~~~
 
 In the `try`-block we could just add it as usual:
 
-```rust
+~~~rust
 let h = "Hello".to_owned();
 
 try {
@@ -168,7 +168,7 @@ try {
 
     f.write_all(s)?
 }
-```
+~~~
 
 Though in the code examples above would be more suitable to just move the expression assigned to
 `s` into the call to `write_all`. It would also be desirable to allow the use of normal
@@ -179,7 +179,7 @@ Another difference is that `do`-notation only works on the statement-level where
 any nesting inside of the `try`-block. A direct translation of the nesting-example of the
 `try`-block would look like this:
 
-```rust
+~~~rust
 fn logging_on()                  -> Result<bool, io::Error>     { ... }
 fn read_values()                 -> Result<SomeData, io::Error> { ... }
 fn log_values(values: &SomeData) -> Result<(), io::Error>       { ... }
@@ -196,7 +196,7 @@ do {
 
     Ok(data)
 }
-```
+~~~
 
 Note that we cannot use `logging_on` directly as the condition of the `if`-expression and that the
 `if`-expression needs to return a `Result` from both branches.
@@ -279,9 +279,9 @@ context.
 Method-position macros could make the `?` operator without `try`-blocks superflous, sine we would
 be able to write the following:
 
-```rust
+~~~rust
 File::create("foo.txt").try!.write_all(b"Hello world!").try!;
-```
+~~~
 
 It does not replace the `?` + `try`-blocks functionality but could serve as a good complement to
 some kind of `do`-notation.
@@ -294,7 +294,7 @@ As detailed above it would be much more composable with different types compared
 If we compare a few of the examples from the comments in the RFC-comments and how they look if
 we use `do`-notation we can see that they are not so bad:
 
-```rust
+~~~rust
 self.type_variables.borrow()
                    .probe(v)
                    .map(|t| self.shallow_resolve(t))
@@ -311,11 +311,11 @@ do {
     t <- self.type_variables.borrow().probe(v);
     Ok(self.shallow_resolve(t))
 }.unwrap_or(typ)
-```
+~~~
 
 Making a `Option<(A, B)>` from two `Option`:
 
-```rust
+~~~rust
 // current:
 a.and_then(|x| b.map(|y| (x, y)))
 // try + ?:
@@ -324,12 +324,12 @@ try { (a?, b?) }
 do { x <- a; b.map(|y| (x, y)) }
 // only do:
 do { x <- a; y <- b; Some((x, y)) }
-```
+~~~
 
 Multiple `try!` macros in a row would also be easier to deal with, especially if their
 success-value is not needed:
 
-```rust
+~~~rust
 // from libsyntax, printing code fragments:
 try!(self.space_if_not_bol());
 try!(self.ibox(indent_unit));
@@ -340,7 +340,7 @@ do {
     self.ibox(indent_unit);
     self.word_nbsp("let")
 }.try!
-```
+~~~
 
 Personally I am a fan of `do`-notation since it much more general than just a control-flow-specific
 language-construction and allows much more advanced ways of composing operations.
